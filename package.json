@@ -18,5 +18,8 @@
   },
   "author": "Alvin Acosta",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "nodemonConfig": {
+    "ignore": ["data/products.json"]
+  }
 }

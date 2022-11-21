@@ -12,6 +12,7 @@ const port = 8080;
 // Route imports
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
+const errorRoute = require("./controllers/errorController");
 
 // built in middleware
 app.use(express.urlencoded({ extended: true }));
@@ -20,14 +21,10 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // Application Routes
-app.use("/admin", adminRoutes.router);
+app.use("/admin", adminRoutes);
 app.use(shopRoutes);
 
-// if nothing matches above, this middleware will match and return a 404 error and a 404 page
-app.use((req, res) => {
-  res.status(404);
-  // res.sendFile(path.join(__dirname, "views", "404.html"));
-  res.render("404", { pageTitle: "Page Not Found" });
-});
+// if nothing matches above, this middleware route will match and return a 404 error and a 404 page
+app.use(errorRoute);
 
 app.listen(port, () => console.log(`Server Listening on port: ${port}.`));

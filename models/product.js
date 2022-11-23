@@ -6,22 +6,19 @@ const _path = path.join(__dirname, "..", "data", "products.json");
 const getProductsFromFile = (cb) => {
   fs.readFile(_path, (err, fileContent) => {
     if (!fileContent) {
-      console.log("empty");
-      console.log("error", err);
-      console.log("fileContent", fileContent);
       cb([]);
     } else {
-      console.log("not empty");
-      console.log("error", err);
-      console.log("fileContent", fileContent);
       cb(JSON.parse(fileContent));
     }
   });
 };
 
 class Product {
-  constructor(passedTitle) {
+  constructor(passedTitle, imageUrl, description, price) {
     this.title = passedTitle;
+    this.url = imageUrl;
+    this.description = description;
+    this.price = price;
   }
 
   save() {

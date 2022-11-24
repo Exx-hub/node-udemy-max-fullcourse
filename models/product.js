@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { v4 } = require("uuid");
 
 const _path = path.join(__dirname, "..", "data", "products.json");
 
@@ -19,13 +20,34 @@ class Product {
     this.url = imageUrl;
     this.description = description;
     this.price = price;
+    this.id = null;
   }
 
   save() {
     getProductsFromFile((products) => {
+      this.id = v4();
       products.push(this);
       fs.writeFile(_path, JSON.stringify(products), (err) => {
         console.log("HELLO");
+      });
+    });
+  }
+
+  static editItem(id, itemDetails) {
+    getProductsFromFile((products) => {
+      let editedItem = { ...itemDetails, id };
+      let newList = [...products.filter((item) => item.id !== id), editedItem];
+      fs.writeFile(_path, JSON.stringify(newList), (err) => {
+        console.log("edited");
+      });
+    });
+  }
+
+  static delete(id) {
+    getProductsFromFile((products) => {
+      let newList = products.filter((item) => item.id !== id);
+      fs.writeFile(_path, JSON.stringify(newList), (err) => {
+        console.log("deleted");
       });
     });
   }

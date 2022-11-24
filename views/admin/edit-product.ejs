@@ -7,14 +7,14 @@
   <%- include('../includes/navigation.ejs') %>
 
   <main>
-    <form class="product-form" action="/admin/add-product" method="POST">
+    <form class="product-form" action="/admin/edit-product/<%= id %>" method="POST">
       <div class="form-control">
         <label for="title">Title</label>
         <input type="text" name="title" id="title" />
       </div>
       <div class="form-control">
         <label for="title">Image</label>
-        <input type="text" name="image" id="image" />
+        <input type="text" name="url" id="url" />
       </div>
       <div class="form-control">
         <label for="title">Price</label>

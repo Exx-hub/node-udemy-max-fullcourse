@@ -13,10 +13,26 @@ const getAddProductForm = (req, res) => {
 const addProduct = (req, res) => {
   const { title, image, description, price } = req.body;
 
-  console.log(req.body);
+  console.log("request body", req.body);
   const newProduct = new Product(title, image, description, price);
 
   newProduct.save();
+
+  res.redirect("/admin/inventory");
+};
+
+const deleteItem = (req, res) => {
+  const id = req.params.id;
+
+  Product.delete(id);
+
+  res.redirect("/admin/inventory");
+};
+
+const editProduct = (req, res) => {
+  const id = req.params.id;
+  const itemDetails = req.body;
+  Product.editItem(id, itemDetails);
 
   res.redirect("/admin/inventory");
 };
@@ -34,11 +50,19 @@ const getInventory = (req, res) => {
   });
 };
 
-const editProduct = (req, res) => {
+const editProductPage = (req, res) => {
   res.render("admin/edit-product", {
     pageTitle: "Edit Product",
     path: "/admin/edit-product",
+    id: req.params.id,
   });
 };
 
-module.exports = { getAddProductForm, addProduct, getInventory, editProduct };
+module.exports = {
+  getAddProductForm,
+  addProduct,
+  getInventory,
+  editProductPage,
+  deleteItem,
+  editProduct,
+};

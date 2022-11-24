@@ -7,6 +7,8 @@ const {
   getAddProductForm,
   addProduct,
   getInventory,
+  editProductPage,
+  deleteItem,
   editProduct,
 } = require("../controllers/adminController");
 
@@ -16,6 +18,9 @@ router.post("/add-product", addProduct);
 
 router.get("/inventory", getInventory);
 
-router.get("/edit-product", editProduct);
+router.get("/edit-product/:id", editProductPage);
+router.post("/edit-product/:id", editProduct);
+
+router.post("/delete-item/:id", deleteItem);
 
 module.exports = router;

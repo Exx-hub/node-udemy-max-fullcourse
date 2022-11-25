@@ -1,13 +1,17 @@
 const fs = require("fs");
 const path = require("path");
-const { v4 } = require("uuid");
 
-const _path = path.join(__dirname, "..", "data", "products.json");
-const cartPath = path.join(__dirname, "..", "data", "cart.json");
+const Cart = require("./cart");
+
+const p = path.join(
+  path.dirname(require.main.filename),
+  "data",
+  "products.json"
+);
 
 const getProductsFromFile = (cb) => {
-  fs.readFile(_path, (err, fileContent) => {
-    if (!fileContent) {
+  fs.readFile(p, (err, fileContent) => {
+    if (err) {
       cb([]);
     } else {
       cb(JSON.parse(fileContent));
@@ -15,61 +19,56 @@ const getProductsFromFile = (cb) => {
   });
 };
 
-class Product {
-  constructor(passedTitle, imageUrl, description, price) {
-    this.title = passedTitle;
-    this.url = imageUrl;
+module.exports = class Product {
+  constructor(id, title, imageUrl, description, price) {
+    this.id = id;
+    this.title = title;
+    this.imageUrl = imageUrl;
     this.description = description;
     this.price = price;
-    this.id = null;
   }
 
   save() {
     getProductsFromFile((products) => {
-      this.id = v4();
-      products.push(this);
-      fs.writeFile(_path, JSON.stringify(products), (err) => {
-        console.log("HELLO");
+      if (this.id) {
+        const existingProductIndex = products.findIndex(
+          (prod) => prod.id === this.id
+        );
+        const updatedProducts = [...products];
+        updatedProducts[existingProductIndex] = this;
+        fs.writeFile(p, JSON.stringify(updatedProducts), (err) => {
+          console.log(err);
+        });
+      } else {
+        this.id = Math.random().toString();
+        products.push(this);
+        fs.writeFile(p, JSON.stringify(products), (err) => {
+          console.log(err);
+        });
+      }
+    });
+  }
+
+  static deleteById(id) {
+    getProductsFromFile((products) => {
+      const product = products.find((prod) => prod.id === id);
+      const updatedProducts = products.filter((prod) => prod.id !== id);
+      fs.writeFile(p, JSON.stringify(updatedProducts), (err) => {
+        if (!err) {
+          Cart.deleteProduct(id, product.price);
+        }
       });
     });
   }
 
-  static getProductById(id, cb) {
+  static fetchAll(cb) {
+    getProductsFromFile(cb);
+  }
+
+  static findById(id, cb) {
     getProductsFromFile((products) => {
-      let foundProduct = products.find((item) => item.id === id);
-      cb(foundProduct);
+      const product = products.find((p) => p.id === id);
+      cb(product);
     });
   }
-
-  static editItem(id, itemDetails) {
-    getProductsFromFile((products) => {
-      let editedItem = { ...itemDetails, id };
-      let newList = [...products.filter((item) => item.id !== id), editedItem];
-      fs.writeFile(_path, JSON.stringify(newList), (err) => {
-        console.log("edited");
-      });
-    });
-  }
-
-  static delete(id) {
-    getProductsFromFile((products) => {
-      let newList = products.filter((item) => item.id !== id);
-      fs.writeFile(_path, JSON.stringify(newList), (err) => {
-        console.log("deleted");
-      });
-    });
-  }
-
-  static fetchAll(callback) {
-    getProductsFromFile(callback);
-  }
-}
-
-module.exports = Product;
-
-// so, save and fetchall both calls getProductsFromFile function.
-// that function accepts a callback function as an argument
-// reads file and depending whether empty or not, calls the passed callback with either empty array or array with read content
-// returned array is what is then passed as argument to the callback function passed. yes i know its confusing haha
-
-// getProductsFromFile => returns an array. => that array (products) passed as argument to callback of either save or fetch
+};

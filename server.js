@@ -12,7 +12,7 @@ const port = 8080;
 // Route imports
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
-const errorRoute = require("./controllers/errorController");
+const errorRoute = require("./controllers/error");
 
 // built in middleware
 app.use(express.urlencoded({ extended: true }));

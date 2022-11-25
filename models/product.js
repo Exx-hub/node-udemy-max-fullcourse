@@ -3,6 +3,7 @@ const path = require("path");
 const { v4 } = require("uuid");
 
 const _path = path.join(__dirname, "..", "data", "products.json");
+const cartPath = path.join(__dirname, "..", "data", "cart.json");
 
 const getProductsFromFile = (cb) => {
   fs.readFile(_path, (err, fileContent) => {
@@ -30,6 +31,13 @@ class Product {
       fs.writeFile(_path, JSON.stringify(products), (err) => {
         console.log("HELLO");
       });
+    });
+  }
+
+  static getProductById(id, cb) {
+    getProductsFromFile((products) => {
+      let foundProduct = products.find((item) => item.id === id);
+      cb(foundProduct);
     });
   }
 

@@ -22,7 +22,7 @@
   "description": "",
   "nodemonConfig": {
     "ignore": [
-      "data/products.json"
+      "data"
     ]
   }
 }

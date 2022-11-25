@@ -19,7 +19,7 @@ router.post("/add-product", addProduct);
 router.get("/inventory", getInventory);
 
 router.get("/edit-product/:id", editProductPage);
-router.post("/edit-product/:id", editProduct);
+router.post("/edit-product", editProduct);
 
 router.post("/delete-item/:id", deleteItem);
 

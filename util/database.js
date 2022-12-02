@@ -1,10 +1,20 @@
-const mysql = require("mysql2");
+const { Sequelize } = require("sequelize");
 
-const pool = mysql.createPool({
+const sequelize = new Sequelize("node-complete", "root", "lokalsoul", {
   host: "localhost",
-  user: "root",
-  database: "node-complete", // name of created schema
-  password: "lokalsoul",
+  dialect: "mysql",
 });
 
-module.exports = pool.promise();
+// test connection
+const tryConnection = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log("Connection has been established successfully.");
+  } catch (error) {
+    console.error("Unable to connect to the database:", error);
+  }
+};
+
+tryConnection();
+
+module.exports = sequelize;

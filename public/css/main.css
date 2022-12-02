@@ -19,13 +19,16 @@ form {
   display: inline;
 }
 
-img {
-  width: 200px;
-  height: 200px;
-}
-
 .centered {
   text-align: center;
+}
+
+.image {
+  height: 15rem;
+}
+
+.image img {
+  height: 100%;
 }
 
 .main-header {

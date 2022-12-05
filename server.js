@@ -20,6 +20,8 @@ const CartItem = require("./models/cart-item");
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
 const errorRoute = require("./controllers/error");
+const Order = require("./models/order");
+const OrderItem = require("./models/order-item");
 
 // built in middleware
 app.use(express.urlencoded({ extended: true }));
@@ -50,10 +52,14 @@ User.hasOne(Cart);
 Cart.belongsTo(User);
 Cart.belongsToMany(Product, { through: CartItem });
 Product.belongsToMany(Cart, { through: CartItem });
+Order.belongsTo(User);
+User.hasMany(Order);
+Order.belongsToMany(Product, { through: OrderItem });
+Product.belongsToMany(Order, { through: OrderItem });
 
 sequelize
   .sync()
-  //   .sync({force: true})
+  // .sync({ force: true })
   .then((result) => {
     return User.findByPk(1);
   })
@@ -66,10 +72,11 @@ sequelize
     }
     return user;
   })
+  // .then((user) => {
+  //   // user.createCart();
+  //   // return user;
+  // })
   .then((user) => {
-    return user.createCart();
-  })
-  .then((cart) => {
     app.listen(port, () => console.log(`Server Listening on port: ${port}.`));
   })
   .catch((err) => {

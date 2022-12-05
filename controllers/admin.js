@@ -1,6 +1,6 @@
 const Product = require("../models/product");
 
-exports.getAddProduct = (req, res, next) => {
+getAddProduct = (req, res, next) => {
   res.render("admin/edit-product", {
     pageTitle: "Add Product",
     path: "/admin/add-product",
@@ -8,7 +8,7 @@ exports.getAddProduct = (req, res, next) => {
   });
 };
 
-exports.postAddProduct = async (req, res, next) => {
+postAddProduct = async (req, res, next) => {
   const title = req.body.title;
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
@@ -49,7 +49,7 @@ exports.postAddProduct = async (req, res, next) => {
   // });
 };
 
-exports.getEditProduct = async (req, res, next) => {
+getEditProduct = async (req, res, next) => {
   const user = req.user;
 
   const editMode = req.query.edit;
@@ -93,7 +93,7 @@ exports.getEditProduct = async (req, res, next) => {
   // .catch((err) => console.log(err));
 };
 
-exports.postEditProduct = async (req, res, next) => {
+postEditProduct = async (req, res, next) => {
   const prodId = req.body.productId;
   const updatedTitle = req.body.title;
   const updatedPrice = req.body.price;
@@ -139,7 +139,7 @@ exports.postEditProduct = async (req, res, next) => {
   //   });
 };
 
-exports.getProducts = async (req, res, next) => {
+getProducts = async (req, res, next) => {
   const user = req.user;
 
   try {
@@ -155,7 +155,7 @@ exports.getProducts = async (req, res, next) => {
   }
 };
 
-exports.postDeleteProduct = async (req, res, next) => {
+postDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
 
   try {
@@ -171,4 +171,13 @@ exports.postDeleteProduct = async (req, res, next) => {
   } catch (err) {
     console.log(err);
   }
+};
+
+module.exports = {
+  getAddProduct,
+  postAddProduct,
+  getEditProduct,
+  postEditProduct,
+  getProducts,
+  postDeleteProduct,
 };

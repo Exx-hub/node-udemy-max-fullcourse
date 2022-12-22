@@ -1,20 +1,30 @@
-const { Sequelize } = require("sequelize");
+const mongodb = require("mongodb");
 
-const sequelize = new Sequelize("node-complete", "root", "lokalsoul", {
-  host: "localhost",
-  dialect: "mysql",
-});
+const MongoClient = mongodb.MongoClient;
 
-// test connection
-const tryConnection = async () => {
+const mongoUri =
+  "mongodb+srv://alvinacosta:lokalsoul@node-udemy-2022.j8p86sm.mongodb.net/?retryWrites=true&w=majority";
+
+let db;
+
+const mongoConnect = async () => {
   try {
-    await sequelize.authenticate();
-    console.log("Connection has been established successfully.");
-  } catch (error) {
-    console.error("Unable to connect to the database:", error);
+    const client = await MongoClient.connect(mongoUri);
+    console.log("DB Connected");
+
+    db = client.db("shop");
+  } catch (err) {
+    console.log(err);
+    throw err;
   }
 };
 
-tryConnection();
+const getDb = () => {
+  if (db) {
+    return db;
+  }
 
-module.exports = sequelize;
+  throw "No database found!";
+};
+
+module.exports = { mongoConnect, getDb };

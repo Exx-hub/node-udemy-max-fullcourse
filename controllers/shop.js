@@ -1,8 +1,9 @@
+const Order = require("../models/order");
 const Product = require("../models/product");
 
 const getIndex = async (req, res, next) => {
   try {
-    const productList = await Product.getAllProducts();
+    const productList = await Product.find({});
     res.render("shop/index", {
       prods: productList,
       pageTitle: "All Products",
@@ -15,7 +16,7 @@ const getIndex = async (req, res, next) => {
 
 const getProducts = async (req, res, next) => {
   try {
-    const productList = await Product.getAllProducts();
+    const productList = await Product.find({});
 
     res.render("shop/product-list", {
       prods: productList,
@@ -29,16 +30,14 @@ const getProducts = async (req, res, next) => {
 
 const getProduct = async (req, res, next) => {
   const prodId = req.params.productId;
-  console.log(prodId);
 
   try {
-    const product = await Product.getProductById(prodId);
+    const product = await Product.findById(prodId);
     res.render("shop/product-detail", {
       product: product,
       pageTitle: product.title,
       path: "/products",
     });
-    console.log(product);
   } catch (err) {
     console.log(err);
   }
@@ -47,7 +46,13 @@ const getProduct = async (req, res, next) => {
 const getCart = async (req, res, next) => {
   const user = req.user;
 
-  const cart = await user.getCart();
+  // this is saying, go an transforms productIds stored in cart.items into full product object using productid
+  // so productIds, become real product object, productIds served as reference to real products
+  const populatedUser = await user.populate("cart.items.productId");
+
+  const cart = populatedUser.cart.items;
+
+  // console.log(cart);
 
   res.render("shop/cart", {
     path: "/cart",
@@ -61,7 +66,7 @@ const addProductToCart = async (req, res, next) => {
   const user = req.user;
 
   try {
-    const productToAdd = await Product.getProductById(prodId);
+    const productToAdd = await Product.findById(prodId);
 
     await user.addToCart(productToAdd);
 
@@ -72,10 +77,11 @@ const addProductToCart = async (req, res, next) => {
 };
 
 const postCartDeleteProduct = async (req, res, next) => {
+  console.log("DELETE");
   const user = req.user;
   const prodId = req.body.productId;
 
-  await user.deleteCartItem(prodId);
+  await user.removeFromCart(prodId);
 
   res.redirect("/cart");
 };
@@ -83,7 +89,27 @@ const postCartDeleteProduct = async (req, res, next) => {
 const createOrder = async (req, res, next) => {
   const user = req.user;
 
-  await user.addOrder();
+  const populatedUser = await user.populate("cart.items.productId");
+
+  console.log(populatedUser);
+
+  const userCart = populatedUser.cart.items.map((i) => {
+    return {
+      quantity: i.quantity,
+      product: { ...i.productId._doc },
+    };
+  });
+
+  const order = new Order({
+    user: {
+      name: user.name,
+      userId: user._id,
+    },
+    products: userCart,
+  });
+
+  await order.save();
+  await user.clearCart();
 
   res.redirect("/orders");
 };
@@ -91,7 +117,8 @@ const createOrder = async (req, res, next) => {
 const getOrders = async (req, res, next) => {
   const user = req.user;
 
-  const orders = await user.getUserOrders();
+  const orders = await Order.find({ "user.userId": user._id });
+  console.log(orders);
 
   res.render("shop/orders", {
     path: "/orders",

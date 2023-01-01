@@ -1,11 +1,13 @@
+const { findById } = require("../models/product");
 const Product = require("../models/product");
 
 const getProducts = async (req, res, next) => {
   const user = req.user;
 
   try {
-    const products = await Product.getAllProducts();
-
+    const products = await Product.find({});
+    // .populate("userId");
+    console.log(products);
     res.render("admin/products", {
       prods: products,
       pageTitle: "Admin Products",
@@ -23,20 +25,25 @@ const postAddProduct = async (req, res, next) => {
   const price = req.body.price;
   const description = req.body.description;
 
-  const product = new Product(
+  console.log(userId);
+
+  const product = new Product({
     title,
     price,
     description,
     imageUrl,
-    null,
-    userId
-  );
+    userId,
+  });
 
-  const result = await product.save();
+  try {
+    const result = await product.save();
 
-  console.log("result", result);
+    console.log("result", result);
 
-  res.redirect("/admin/products");
+    res.redirect("/admin/products");
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 const getAddProduct = (req, res, next) => {
@@ -57,7 +64,7 @@ const getEditProduct = async (req, res, next) => {
   const prodId = req.params.productId;
 
   try {
-    const product = await Product.getProductById(prodId);
+    const product = await Product.findById(prodId);
 
     if (!product) {
       return res.redirect("/");
@@ -81,15 +88,25 @@ const postEditProduct = async (req, res, next) => {
   const updatedImageUrl = req.body.imageUrl;
   const updatedDesc = req.body.description;
 
-  const editedProduct = new Product(
-    updatedTitle,
-    updatedPrice,
-    updatedDesc,
-    updatedImageUrl,
-    prodId
-  );
+  // one way find product first then edit then save
+  // const productToEdit = await Product.findById(prodId);
 
-  const result = await editedProduct.save();
+  // productToEdit.title = updatedTitle;
+  // productToEdit.price = updatedPrice;
+  // productToEdit.imageUrl = updatedImageUrl;
+  // productToEdit.description = updatedDesc;
+
+  // const result = await productToEdit.save();
+
+  // for me this is a better way
+  const updatedProduct = {
+    title: updatedTitle,
+    price: updatedPrice,
+    description: updatedDesc,
+    imageUrl: updatedImageUrl,
+  };
+
+  const result = await Product.findByIdAndUpdate(prodId, updatedProduct);
 
   console.log("result", result);
 
@@ -100,7 +117,8 @@ const deleteProductById = async (req, res, next) => {
   const prodId = req.body.productId;
 
   try {
-    const result = await Product.deleteProduct(prodId);
+    // const result = await Product.deleteOne({ _id: prodId });
+    const result = await Product.findByIdAndDelete(prodId);
 
     console.log("result", result);
     res.redirect("/admin/products");

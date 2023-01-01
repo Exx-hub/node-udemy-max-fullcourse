@@ -1,69 +1,87 @@
-const mongodb = require("mongodb");
-const { getDb } = require("../util/database");
+const mongoose = require("mongoose");
 
-class Product {
-  constructor(title, price, description, imageUrl, id, userId) {
-    this.title = title;
-    this.price = price;
-    this.description = description;
-    this.imageUrl = imageUrl;
-    this._id = id ? new mongodb.ObjectId(id) : null;
-    this.userId = userId;
-  }
+const Schema = mongoose.Schema;
 
-  async save() {
-    const db = getDb();
+const productSchema = new Schema({
+  title: { type: String, required: true },
+  price: { type: Number, required: true },
+  description: { type: String, required: true },
+  imageUrl: { type: String, required: true },
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+});
 
-    const collection = db.collection("products");
+module.exports = mongoose.model("Product", productSchema);
 
-    let dbOperation;
-    if (this._id) {
-      // if editing there should be an id
-      dbOperation = await collection.updateOne(
-        { _id: this._id },
-        { $set: this }
-      );
-    } else {
-      // if creating a new product no id yet.
-      dbOperation = await collection.insertOne(this);
-    }
+// const mongodb = require("mongodb");
+// const { getDb } = require("../util/database");
 
-    return dbOperation;
-  }
+// class Product {
+//   constructor(title, price, description, imageUrl, id, userId) {
+//     this.title = title;
+//     this.price = price;
+//     this.description = description;
+//     this.imageUrl = imageUrl;
+//     this._id = id ? new mongodb.ObjectId(id) : null;
+//     this.userId = userId;
+//   }
 
-  static async getAllProducts() {
-    const db = getDb();
+//   async save() {
+//     const db = getDb();
 
-    const collection = db.collection("products");
+//     const collection = db.collection("products");
 
-    const productList = await collection.find({}).toArray();
+//     let dbOperation;
+//     if (this._id) {
+//       // if editing there should be an id
+//       dbOperation = await collection.updateOne(
+//         { _id: this._id },
+//         { $set: this }
+//       );
+//     } else {
+//       // if creating a new product no id yet.
+//       dbOperation = await collection.insertOne(this);
+//     }
 
-    return productList;
-  }
+//     return dbOperation;
+//   }
 
-  static async getProductById(id) {
-    const db = getDb();
+//   static async getAllProducts() {
+//     const db = getDb();
 
-    const collection = db.collection("products");
+//     const collection = db.collection("products");
 
-    const product = await collection
-      .find({ _id: new mongodb.ObjectId(id) })
-      .next();
+//     const productList = await collection.find({}).toArray();
 
-    return product;
-  }
+//     return productList;
+//   }
 
-  static async deleteProduct(id) {
-    const db = getDb();
+//   static async getProductById(id) {
+//     const db = getDb();
 
-    const collection = db.collection("products");
+//     const collection = db.collection("products");
 
-    const productToDelete = await collection.deleteOne({
-      _id: new mongodb.ObjectId(id),
-    });
+//     const product = await collection
+//       .find({ _id: new mongodb.ObjectId(id) })
+//       .next();
 
-    return productToDelete;
-  }
-}
+//     return product;
+//   }
 
-module.exports = Product;
+//   static async deleteProduct(id) {
+//     const db = getDb();
+
+//     const collection = db.collection("products");
+
+//     const productToDelete = await collection.deleteOne({
+//       _id: new mongodb.ObjectId(id),
+//     });
+
+//     return productToDelete;
+//   }
+// }
+
+// module.exports = Product;

@@ -1,17 +1,17 @@
-const { findById } = require("../models/product");
 const Product = require("../models/product");
 
 const getProducts = async (req, res, next) => {
-  const user = req.user;
+  const isLoggedIn = req.session.isLoggedIn;
 
   try {
     const products = await Product.find({});
     // .populate("userId");
-    console.log(products);
+
     res.render("admin/products", {
       prods: products,
       pageTitle: "Admin Products",
       path: "/admin/products",
+      isAuthenticated: isLoggedIn,
     });
   } catch (error) {
     console.log(error);
@@ -47,15 +47,18 @@ const postAddProduct = async (req, res, next) => {
 };
 
 const getAddProduct = (req, res, next) => {
+  const isLoggedIn = req.session.isLoggedIn;
+
   res.render("admin/edit-product", {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
+    isAuthenticated: isLoggedIn,
   });
 };
 
 const getEditProduct = async (req, res, next) => {
-  const user = req.user;
+  const isLoggedIn = req.session.isLoggedIn;
 
   const editMode = req.query.edit;
   if (!editMode) {
@@ -75,6 +78,7 @@ const getEditProduct = async (req, res, next) => {
       path: "/admin/edit-product",
       editing: editMode,
       product: product,
+      isAuthenticated: isLoggedIn,
     });
   } catch (err) {
     console.log("ERROR:", err);

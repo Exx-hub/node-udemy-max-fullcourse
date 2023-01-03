@@ -1,13 +1,21 @@
 const Order = require("../models/order");
 const Product = require("../models/product");
+const User = require("../models/user");
 
 const getIndex = async (req, res, next) => {
+  const cookies = req.cookies;
+  console.log("cookies", cookies);
+  console.log("view cookies without cookieparser:", req.get("Cookie"));
+
+  const isLoggedIn = req.session.isLoggedIn;
+
   try {
     const productList = await Product.find({});
     res.render("shop/index", {
       prods: productList,
       pageTitle: "All Products",
       path: "/",
+      isAuthenticated: isLoggedIn,
     });
   } catch (err) {
     console.log(err);
@@ -15,6 +23,7 @@ const getIndex = async (req, res, next) => {
 };
 
 const getProducts = async (req, res, next) => {
+  const isLoggedIn = req.session.isLoggedIn;
   try {
     const productList = await Product.find({});
 
@@ -22,6 +31,7 @@ const getProducts = async (req, res, next) => {
       prods: productList,
       pageTitle: "Products",
       path: "/products",
+      isAuthenticated: isLoggedIn,
     });
   } catch (err) {
     console.log(err);
@@ -29,6 +39,7 @@ const getProducts = async (req, res, next) => {
 };
 
 const getProduct = async (req, res, next) => {
+  const isLoggedIn = req.session.isLoggedIn;
   const prodId = req.params.productId;
 
   try {
@@ -37,6 +48,7 @@ const getProduct = async (req, res, next) => {
       product: product,
       pageTitle: product.title,
       path: "/products",
+      isAuthenticated: isLoggedIn,
     });
   } catch (err) {
     console.log(err);
@@ -44,7 +56,10 @@ const getProduct = async (req, res, next) => {
 };
 
 const getCart = async (req, res, next) => {
+  const isLoggedIn = req.session.isLoggedIn;
   const user = req.user;
+
+  console.log("user", user);
 
   // this is saying, go an transforms productIds stored in cart.items into full product object using productid
   // so productIds, become real product object, productIds served as reference to real products
@@ -52,17 +67,19 @@ const getCart = async (req, res, next) => {
 
   const cart = populatedUser.cart.items;
 
-  // console.log(cart);
+  // // console.log(cart);
 
   res.render("shop/cart", {
     path: "/cart",
     pageTitle: "Your Cart",
     products: cart,
+    isAuthenticated: isLoggedIn,
   });
 };
 
 const addProductToCart = async (req, res, next) => {
   const prodId = req.body.productId;
+
   const user = req.user;
 
   try {
@@ -77,9 +94,9 @@ const addProductToCart = async (req, res, next) => {
 };
 
 const postCartDeleteProduct = async (req, res, next) => {
-  console.log("DELETE");
-  const user = req.user;
   const prodId = req.body.productId;
+
+  const user = req.user;
 
   await user.removeFromCart(prodId);
 
@@ -115,6 +132,7 @@ const createOrder = async (req, res, next) => {
 };
 
 const getOrders = async (req, res, next) => {
+  const isLoggedIn = req.session.isLoggedIn;
   const user = req.user;
 
   const orders = await Order.find({ "user.userId": user._id });
@@ -124,6 +142,7 @@ const getOrders = async (req, res, next) => {
     path: "/orders",
     pageTitle: "Your Orders",
     orders: orders,
+    isAuthenticated: isLoggedIn,
   });
 };
 

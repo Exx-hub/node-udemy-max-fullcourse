@@ -7,6 +7,8 @@ const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
+const csrf = require("csurf");
+const flash = require("connect-flash");
 
 const mongoUri =
   "mongodb+srv://alvinacosta:lokalsoul@node-udemy-2022.j8p86sm.mongodb.net/shopDB?retryWrites=true&w=majority";
@@ -15,6 +17,8 @@ const store = new MongoDBStore({
   uri: mongoUri,
   collection: "sessions",
 });
+
+const csrfProtection = csrf();
 
 // allows to set any value globally in our express application - to get stored value => app.get()
 app.set("view engine", "ejs");
@@ -42,6 +46,10 @@ app.use(
     store: store,
   })
 );
+app.use(csrfProtection);
+app.use(flash());
+
+app.use(express.static(path.join(__dirname, "public")));
 
 // middleware
 // so if there is a user stored in session, findById and store that user in req.user so routes below can use
@@ -61,7 +69,14 @@ app.use((req, res, next) => {
     .catch((err) => console.log(err));
 });
 
-app.use(express.static(path.join(__dirname, "public")));
+// middleware
+// set variables available to your views, so isAuthenticated variable and csrfToken is accessible in your views,
+// even if you dont include them in your res.render options
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
 
 // Application Routes
 app.use("/admin", adminRoutes);
@@ -86,20 +101,6 @@ try {
 const db = mongoose.connection;
 
 db.once("open", () => {
-  User.findOne().then((user) => {
-    if (!user) {
-      const user = new User({
-        name: "Alvin",
-        email: "alvinfloresacosta@gmail.com",
-        cart: {
-          items: [],
-        },
-      });
-
-      user.save();
-    }
-  });
-
   console.log("DB connection Established");
   app.listen(port, () => console.log(`Server running on port ${port}`));
 });

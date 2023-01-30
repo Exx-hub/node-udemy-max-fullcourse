@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/user");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
+const { validationResult } = require("express-validator");
 
 let config = {
   service: "gmail",
@@ -20,24 +21,59 @@ const getLogin = (req, res, next) => {
     path: "/login",
     pageTitle: "Sign In",
     errorMessage: message.length > 0 ? message[0] : null,
+    oldInput: {
+      email: "",
+      password: "",
+    },
+    validationErrors: [],
   });
 };
 
 const postLogin = async (req, res, next) => {
   const { email, password } = req.body;
 
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).render("auth/loginPage", {
+      path: "/login",
+      pageTitle: "Sign In",
+      errorMessage: errors.array()[0].msg,
+      oldInput: {
+        email,
+        password,
+      },
+      validationErrors: errors.array(),
+    });
+  }
   const user = await User.findOne({ email });
 
   if (!user) {
-    req.flash("error", "Email does not exists");
-    return res.redirect("/login");
+    return res.status(422).render("auth/loginPage", {
+      path: "/login",
+      pageTitle: "Sign In",
+      errorMessage: "Email does not exists",
+      oldInput: {
+        email,
+        password,
+      },
+      validationErrors: [{ param: "email" }],
+    });
   }
 
   const verifiedPassword = await bcrypt.compare(password, user.password);
 
   if (!verifiedPassword) {
-    req.flash("error", "Incorrect password");
-    return res.redirect("/login");
+    return res.status(422).render("auth/loginPage", {
+      path: "/login",
+      pageTitle: "Sign In",
+      errorMessage: "Incorrect Password",
+      oldInput: {
+        email,
+        password,
+      },
+      validationErrors: [{ param: "password" }],
+    });
   }
 
   // if able to reach here, save user in session.
@@ -58,24 +94,64 @@ const getSignUp = (req, res, next) => {
     path: "/signup",
     pageTitle: "Sign Up",
     errorMessage: message.length > 0 ? message[0] : null,
+    oldInput: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    validationErrors: [],
   });
 };
 
 const postSignup = async (req, res, next) => {
   const { email, password, confirmPassword } = req.body;
 
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).render("auth/signUp", {
+      path: "/signup",
+      pageTitle: "Sign Up",
+      errorMessage: errors.array()[0].msg,
+      oldInput: {
+        email,
+        password,
+        confirmPassword,
+      },
+      validationErrors: errors.array(),
+    });
+  }
+
   const emailExists = await User.findOne({ email });
 
   if (emailExists) {
-    req.flash("error", "Email already exist");
-    return res.redirect("/signup");
+    return res.status(422).render("auth/signUp", {
+      path: "/signup",
+      pageTitle: "Sign Up",
+      errorMessage: "Email already exists.",
+      oldInput: {
+        email,
+        password,
+        confirmPassword,
+      },
+      validationErrors: [{ param: "email" }],
+    });
   }
 
   const passwordsMatch = password === confirmPassword;
 
   if (!passwordsMatch) {
-    req.flash("error", "Password mismatch");
-    return res.redirect("/signup");
+    return res.status(422).render("auth/signUp", {
+      path: "/signup",
+      pageTitle: "Sign Up",
+      errorMessage: "Passwords do not match.",
+      oldInput: {
+        email,
+        password,
+        confirmPassword,
+      },
+      validationErrors: [{ param: "password" }, { param: "confirmPassword" }],
+    });
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);

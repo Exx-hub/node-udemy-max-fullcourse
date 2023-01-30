@@ -1,9 +1,10 @@
 const Product = require("../models/product");
 
 const getProducts = async (req, res, next) => {
+  const user = req.user;
+
   try {
-    const products = await Product.find({});
-    // .populate("userId");
+    const products = await Product.find({ userId: user._id });
 
     res.render("admin/products", {
       prods: products,
@@ -83,25 +84,22 @@ const postEditProduct = async (req, res, next) => {
   const updatedImageUrl = req.body.imageUrl;
   const updatedDesc = req.body.description;
 
+  const user = req.user;
+
   // one way find product first then edit then save
-  // const productToEdit = await Product.findById(prodId);
+  // can also use findByIdAndUpdate and pass id and updated object
+  const productToEdit = await Product.findById(prodId);
 
-  // productToEdit.title = updatedTitle;
-  // productToEdit.price = updatedPrice;
-  // productToEdit.imageUrl = updatedImageUrl;
-  // productToEdit.description = updatedDesc;
+  if (productToEdit.userId.toString() !== user._id.toString()) {
+    return res.redirect("/");
+  }
 
-  // const result = await productToEdit.save();
+  productToEdit.title = updatedTitle;
+  productToEdit.price = updatedPrice;
+  productToEdit.imageUrl = updatedImageUrl;
+  productToEdit.description = updatedDesc;
 
-  // for me this is a better way
-  const updatedProduct = {
-    title: updatedTitle,
-    price: updatedPrice,
-    description: updatedDesc,
-    imageUrl: updatedImageUrl,
-  };
-
-  const result = await Product.findByIdAndUpdate(prodId, updatedProduct);
+  const result = await productToEdit.save();
 
   console.log("result", result);
 
@@ -110,10 +108,9 @@ const postEditProduct = async (req, res, next) => {
 
 const deleteProductById = async (req, res, next) => {
   const prodId = req.body.productId;
-
+  const user = req.user;
   try {
-    // const result = await Product.deleteOne({ _id: prodId });
-    const result = await Product.findByIdAndDelete(prodId);
+    const result = await Product.deleteOne({ _id: prodId, userId: user._id });
 
     console.log("result", result);
     res.redirect("/admin/products");

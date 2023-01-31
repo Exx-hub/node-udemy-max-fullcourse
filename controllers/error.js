@@ -8,4 +8,14 @@ const get404 = (req, res, next) => {
   });
 };
 
-module.exports = get404;
+const get500 = (req, res, next) => {
+  const isLoggedIn = req.session.isLoggedIn;
+
+  res.status(500).render("500", {
+    pageTitle: "Server Down!",
+    path: "/500",
+    isAuthenticated: isLoggedIn,
+  });
+};
+
+module.exports = { get404, get500 };

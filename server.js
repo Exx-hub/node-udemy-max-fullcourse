@@ -30,7 +30,7 @@ const port = 8080;
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
 const authRoutes = require("./routes/auth");
-const errorRoute = require("./controllers/error");
+const errorController = require("./controllers/error");
 const User = require("./models/user");
 
 // built in middleware
@@ -63,10 +63,15 @@ app.use((req, res, next) => {
 
   User.findById(req.session.user._id)
     .then((user) => {
+      if (!user) {
+        return next();
+      }
       req.user = user;
       next();
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      throw new Error(err);
+    });
 });
 
 // middleware
@@ -83,8 +88,17 @@ app.use("/admin", adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
 
+app.get("/500", errorController.get500);
+
 // if nothing matches above, this middleware route will match and return a 404 error and a 404 page
-app.use(errorRoute);
+app.use(errorController.get404);
+
+// express error middleware, gets call if next is passed with an error object
+app.use((error, req, res, next) => {
+  console.log("error:", error);
+  console.log("express error middleware in action");
+  res.redirect("/500");
+});
 
 // connect to database
 try {

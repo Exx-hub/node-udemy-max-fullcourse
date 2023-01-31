@@ -183,7 +183,10 @@ const postSignup = async (req, res, next) => {
       }
     });
   } catch (err) {
-    return res.status(500).json({ message: "Failed to signup" });
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+
+    return next(error);
   }
 };
 
@@ -300,8 +303,10 @@ const postUpdatePassword = async (req, res, next) => {
     await foundUser.save();
     res.redirect("/login");
   } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+
+    return next(error);
   }
 };
 

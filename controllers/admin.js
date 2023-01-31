@@ -11,8 +11,10 @@ const getProducts = async (req, res, next) => {
       pageTitle: "Admin Products",
       path: "/admin/products",
     });
-  } catch (error) {
-    console.log(error);
+  } catch (err) {
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(error);
   }
 };
 
@@ -41,6 +43,10 @@ const postAddProduct = async (req, res, next) => {
     res.redirect("/admin/products");
   } catch (err) {
     console.log(err);
+    // res.redirect("/500");
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(error);
   }
 };
 
@@ -73,7 +79,9 @@ const getEditProduct = async (req, res, next) => {
       product: product,
     });
   } catch (err) {
-    console.log("ERROR:", err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(error);
   }
 };
 
@@ -88,22 +96,26 @@ const postEditProduct = async (req, res, next) => {
 
   // one way find product first then edit then save
   // can also use findByIdAndUpdate and pass id and updated object
-  const productToEdit = await Product.findById(prodId);
+  try {
+    const productToEdit = await Product.findById(prodId);
 
-  if (productToEdit.userId.toString() !== user._id.toString()) {
-    return res.redirect("/");
+    if (productToEdit.userId.toString() !== user._id.toString()) {
+      return res.redirect("/");
+    }
+
+    productToEdit.title = updatedTitle;
+    productToEdit.price = updatedPrice;
+    productToEdit.imageUrl = updatedImageUrl;
+    productToEdit.description = updatedDesc;
+
+    await productToEdit.save();
+    res.redirect("/admin/products");
+  } catch (err) {
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+
+    return next(error);
   }
-
-  productToEdit.title = updatedTitle;
-  productToEdit.price = updatedPrice;
-  productToEdit.imageUrl = updatedImageUrl;
-  productToEdit.description = updatedDesc;
-
-  const result = await productToEdit.save();
-
-  console.log("result", result);
-
-  res.redirect("/admin/products");
 };
 
 const deleteProductById = async (req, res, next) => {
@@ -115,7 +127,9 @@ const deleteProductById = async (req, res, next) => {
     console.log("result", result);
     res.redirect("/admin/products");
   } catch (err) {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(error);
   }
 };
 

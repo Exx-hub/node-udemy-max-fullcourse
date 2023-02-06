@@ -12,7 +12,7 @@ const get500 = (req, res, next) => {
   const isLoggedIn = req.session.isLoggedIn;
 
   res.status(500).render("500", {
-    pageTitle: "Server Down!",
+    pageTitle: "Something went wrong!",
     path: "/500",
     isAuthenticated: isLoggedIn,
   });

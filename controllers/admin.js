@@ -1,4 +1,6 @@
+const { validationResult } = require("express-validator");
 const Product = require("../models/product");
+const deleteFile = require("../util/fileHelper");
 
 const getProducts = async (req, res, next) => {
   const user = req.user;
@@ -21,11 +23,46 @@ const getProducts = async (req, res, next) => {
 const postAddProduct = async (req, res, next) => {
   const userId = req.user._id;
   const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
+  const image = req.file;
   const price = req.body.price;
   const description = req.body.description;
+  console.log(image);
 
-  console.log(userId);
+  if (!image) {
+    return res.status(422).render("admin/edit-product", {
+      pageTitle: "Add Product",
+      path: "/admin/add-product",
+      editing: false,
+      hasError: true,
+      product: {
+        title: title,
+        price: price,
+        description: description,
+      },
+      errorMessage: "Attached file is not an image.",
+      validationErrors: [],
+    });
+  }
+
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).render("admin/edit-product", {
+      pageTitle: "Add Product",
+      path: "/admin/add-product",
+      editing: false,
+      hasError: true,
+      product: {
+        title: title,
+        price: price,
+        description: description,
+      },
+      errorMessage: errors.array()[0].msg,
+      validationErrors: errors.array(),
+    });
+  }
+
+  const imageUrl = image.path;
 
   const product = new Product({
     title,
@@ -42,8 +79,6 @@ const postAddProduct = async (req, res, next) => {
 
     res.redirect("/admin/products");
   } catch (err) {
-    console.log(err);
-    // res.redirect("/500");
     const error = new Error(err);
     error.httpStatusCode = 500;
     return next(error);
@@ -55,6 +90,9 @@ const getAddProduct = (req, res, next) => {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
+    hasError: false,
+    errorMessage: null,
+    validationErrors: [],
   });
 };
 
@@ -77,6 +115,9 @@ const getEditProduct = async (req, res, next) => {
       path: "/admin/edit-product",
       editing: editMode,
       product: product,
+      hasError: false,
+      errorMessage: null,
+      validationErrors: [],
     });
   } catch (err) {
     const error = new Error(err);
@@ -89,13 +130,29 @@ const postEditProduct = async (req, res, next) => {
   const prodId = req.body.productId;
   const updatedTitle = req.body.title;
   const updatedPrice = req.body.price;
-  const updatedImageUrl = req.body.imageUrl;
   const updatedDesc = req.body.description;
-
+  const uploadedImage = req.file;
   const user = req.user;
 
-  // one way find product first then edit then save
-  // can also use findByIdAndUpdate and pass id and updated object
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).render("admin/edit-product", {
+      pageTitle: "Edit Product",
+      path: "/admin/edit-product",
+      editing: true,
+      hasError: true,
+      product: {
+        title: updatedTitle,
+        price: updatedPrice,
+        description: updatedDesc,
+        _id: prodId,
+      },
+      errorMessage: errors.array()[0].msg,
+      validationErrors: errors.array(),
+    });
+  }
+
   try {
     const productToEdit = await Product.findById(prodId);
 
@@ -105,8 +162,12 @@ const postEditProduct = async (req, res, next) => {
 
     productToEdit.title = updatedTitle;
     productToEdit.price = updatedPrice;
-    productToEdit.imageUrl = updatedImageUrl;
     productToEdit.description = updatedDesc;
+
+    if (uploadedImage) {
+      deleteFile(productToEdit.imageUrl);
+      productToEdit.imageUrl = uploadedImage.path;
+    }
 
     await productToEdit.save();
     res.redirect("/admin/products");
@@ -121,8 +182,17 @@ const postEditProduct = async (req, res, next) => {
 const deleteProductById = async (req, res, next) => {
   const prodId = req.body.productId;
   const user = req.user;
+
+  const product = await Product.findById(prodId);
+
+  if (!product) {
+    return next(new Error("Product not found."));
+  }
+
   try {
     const result = await Product.deleteOne({ _id: prodId, userId: user._id });
+
+    deleteFile(product.imageUrl);
 
     console.log("result", result);
     res.redirect("/admin/products");

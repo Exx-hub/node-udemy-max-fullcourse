@@ -1,10 +1,14 @@
+const fs = require("fs");
+const path = require("path");
+const PDFDocument = require("pdfkit");
+
 const Order = require("../models/order");
 const Product = require("../models/product");
 
 const getIndex = async (req, res, next) => {
   // const cookies = req.cookies;
   // console.log("cookies", cookies);
-  // console.log("view cookies without cookieparser:", req.get("Cookie"));
+  // console.log("view cookies without cookieparser:", req.get("Cookie"))
 
   try {
     const productList = await Product.find({});
@@ -134,6 +138,87 @@ const getOrders = async (req, res, next) => {
   });
 };
 
+const getHardcodedInvoiceExample = async (req, res, next) => {
+  const user = req.user;
+  const { orderId } = req.params;
+
+  // find order in db to get a hold of userId referenced in order
+  // then check userid in order if same sa req.user which is logged in user.
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return next(new Error("No order found."));
+  }
+
+  if (order.user.userId.toString() !== user._id.toString()) {
+    return next(new Error("Unauthorized download."));
+  }
+
+  const invoiceName = `invoice-${orderId}.pdf`;
+  const invoicePath = path.join("data", "invoices", invoiceName);
+  console.log(invoicePath);
+
+  // fs.readFile(invoicePath, (err, data) => {
+  //   if (err) return next(err);
+
+  //   res.setHeader("Content-Type", "application/pdf");
+  //   res.setHeader("Content-Disposition", 'attachment; filename="' + invoiceName + '"  ');
+  //   res.send(data);
+  // });
+
+  const file = fs.createReadStream(invoicePath);
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", 'attachment; filename="' + invoiceName + '"  ');
+
+  file.pipe(res);
+};
+
+const getInvoice = async (req, res, next) => {
+  const user = req.user;
+  const { orderId } = req.params;
+
+  const orderItem = await Order.findById(orderId);
+
+  if (!orderItem) {
+    return next(new Error("No order found."));
+  }
+
+  if (orderItem.user.userId.toString() !== user._id.toString()) {
+    return next(new Error("Unauthorized download."));
+  }
+
+  const invoiceName = `invoice-${orderId}.pdf`;
+  const invoicePath = path.join("data", "invoices", invoiceName);
+  console.log(invoicePath);
+
+  const pdfDoc = new PDFDocument();
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", 'attachment; filename="' + invoiceName + '"  ');
+
+  pdfDoc.pipe(fs.createWriteStream(invoicePath)); // save in your file system data/invoices
+  pdfDoc.pipe(res); // serve in client with response
+
+  pdfDoc.fontSize(26).text("Order Invoice", {
+    underline: true,
+  });
+
+  let totalPrice = 0;
+
+  orderItem.products.forEach((item) => {
+    totalPrice = totalPrice + item.quantity * item.product.price;
+    pdfDoc
+      .fontSize(14)
+      .text(item.product.title + " - " + item.quantity + " x " + "$" + item.product.price);
+  });
+
+  pdfDoc.text("------");
+  pdfDoc.fontSize(20).text("Total Price: $ " + totalPrice);
+
+  pdfDoc.end();
+};
+
 module.exports = {
   getProducts,
   getProduct,
@@ -143,4 +228,5 @@ module.exports = {
   postCartDeleteProduct,
   getOrders,
   createOrder,
+  getInvoice,
 };

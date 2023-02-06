@@ -9,6 +9,7 @@ const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
 const csrf = require("csurf");
 const flash = require("connect-flash");
+const multer = require("multer");
 
 const mongoUri =
   "mongodb+srv://alvinacosta:lokalsoul@node-udemy-2022.j8p86sm.mongodb.net/shopDB?retryWrites=true&w=majority";
@@ -19,6 +20,28 @@ const store = new MongoDBStore({
 });
 
 const csrfProtection = csrf();
+
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "images");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + "-" + file.originalname);
+  },
+});
+
+const fileFilterFunc = (req, file, cb) => {
+  if (
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg"
+  ) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
 
 // allows to set any value globally in our express application - to get stored value => app.get()
 app.set("view engine", "ejs");
@@ -33,9 +56,10 @@ const authRoutes = require("./routes/auth");
 const errorController = require("./controllers/error");
 const User = require("./models/user");
 
-// built in middleware
+// middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(multer({ storage: fileStorage, fileFilter: fileFilterFunc }).single("image"));
 app.use(cookieParser());
 app.use(
   session({
@@ -50,6 +74,11 @@ app.use(csrfProtection);
 app.use(flash());
 
 app.use(express.static(path.join(__dirname, "public")));
+
+// will look into "images" folder and serve files there, if path has with "/images"
+// ex. http://localhost:8080/images/1675664935812-844825689-orange.jpg
+// http://localhost:8080/images/ => will look in the images folder.
+app.use("/images", express.static(path.join(__dirname, "images")));
 
 // middleware
 // so if there is a user stored in session, findById and store that user in req.user so routes below can use

@@ -81,6 +81,9 @@ const postLogin = async (req, res, next) => {
   req.session.user = user;
   req.session.isLoggedIn = true;
 
+  // how to set cookie from server
+  // res.cookie("user", { name: "alvin", job: "developer" });
+
   // to ensure that session updates are done before redirecting. due to slow connection maybe
 
   if (req.session.user) {
@@ -260,9 +263,7 @@ const getUpdatePassword = async (req, res, next) => {
   });
 
   if (!foundUser) {
-    return res
-      .status(422)
-      .json({ message: "Invalid reset token / something went wrong." });
+    return res.status(422).json({ message: "Invalid reset token / something went wrong." });
   }
 
   const message = req.flash("error");
@@ -288,9 +289,7 @@ const postUpdatePassword = async (req, res, next) => {
   });
 
   if (!foundUser) {
-    return res
-      .status(422)
-      .json({ message: "Invalid reset token / something went wrong." });
+    return res.status(422).json({ message: "Invalid reset token / something went wrong." });
   }
 
   const newHashedPassword = await bcrypt.hash(newPassword, 12);

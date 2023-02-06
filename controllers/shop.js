@@ -5,17 +5,40 @@ const PDFDocument = require("pdfkit");
 const Order = require("../models/order");
 const Product = require("../models/product");
 
+const ITEMS_PER_PAGE = 2;
+
 const getIndex = async (req, res, next) => {
+  // read cookies from request object from client, if any
   // const cookies = req.cookies;
   // console.log("cookies", cookies);
-  // console.log("view cookies without cookieparser:", req.get("Cookie"))
+  // console.log("view cookies without cookieparser:", req.get("Cookie"));
+
+  // query name is page ?page=1
+  const { page } = req.query;
+
+  const numberedPage = Number(page) || 1;
+
+  const totalItems = await Product.find().countDocuments();
+
+  const hasNextPage = ITEMS_PER_PAGE * numberedPage < totalItems;
+  const hasPrevPage = numberedPage > 1;
+
+  console.log({ page, totalItems, hasNextPage });
 
   try {
-    const productList = await Product.find({});
+    const productList = await Product.find({})
+      .skip((page - 1) * ITEMS_PER_PAGE)
+      .limit(ITEMS_PER_PAGE);
     res.render("shop/index", {
       prods: productList,
       pageTitle: "All Products",
       path: "/",
+      hasNextPage: hasNextPage,
+      hasPrevPage: hasPrevPage,
+      currentPage: numberedPage,
+      nextPage: numberedPage + 1,
+      prevPage: numberedPage - 1,
+      lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
     });
   } catch (err) {
     console.log(err);
@@ -23,13 +46,30 @@ const getIndex = async (req, res, next) => {
 };
 
 const getProducts = async (req, res, next) => {
+  const { page } = req.query;
+
+  const numberedPage = Number(page) || 1;
+
+  const totalItems = await Product.find().countDocuments();
+
+  const hasNextPage = ITEMS_PER_PAGE * numberedPage < totalItems;
+  const hasPrevPage = numberedPage > 1;
+
   try {
-    const productList = await Product.find({});
+    const productList = await Product.find({})
+      .skip((page - 1) * ITEMS_PER_PAGE)
+      .limit(ITEMS_PER_PAGE);
 
     res.render("shop/product-list", {
       prods: productList,
       pageTitle: "Products",
       path: "/products",
+      hasNextPage: hasNextPage,
+      hasPrevPage: hasPrevPage,
+      currentPage: numberedPage,
+      nextPage: numberedPage + 1,
+      prevPage: numberedPage - 1,
+      lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
     });
   } catch (err) {
     console.log(err);

@@ -23,8 +23,6 @@ const getIndex = async (req, res, next) => {
   const hasNextPage = ITEMS_PER_PAGE * numberedPage < totalItems;
   const hasPrevPage = numberedPage > 1;
 
-  console.log({ page, totalItems, hasNextPage });
-
   try {
     const productList = await Product.find({})
       .skip((page - 1) * ITEMS_PER_PAGE)

@@ -1,6 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
+const stripe = require("stripe")(
+  "sk_test_51HVenzEQKuJpzb7TCiUx9gqanlI6OJXjjrryrfKGOkDhphYXUR85Ru72ZTAc1M0XipOdJ5eOeJoUf7cW5Jxk2nbY00Roa4w0pW"
+);
 
 const Order = require("../models/order");
 const Product = require("../models/product");
@@ -135,6 +138,72 @@ const postCartDeleteProduct = async (req, res, next) => {
   res.redirect("/cart");
 };
 
+const getCheckout = async (req, res, next) => {
+  const user = req.user;
+  const populatedUser = await user.populate("cart.items.productId");
+  const cart = populatedUser.cart.items;
+
+  const totalPrice = cart.reduce((acc, item) => {
+    return acc + item.quantity * item.productId.price;
+  }, 0);
+
+  const mappedCart = cart.map((p) => {
+    return {
+      name: p.productId.title,
+      description: p.productId.description,
+      amount: p.productId.price * 100,
+      currency: "usd",
+      quantity: p.quantity,
+    };
+  });
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: mappedCart,
+    success_url: req.protocol + "://" + req.get("host") + "/checkout/success",
+    cancel_url: req.protocol + "://" + req.get("host") + "/checkout/cancel",
+  });
+
+  console.log({ session });
+
+  res.render("shop/checkout", {
+    path: "/checkout",
+    pageTitle: "Checkout",
+    products: cart,
+    totalSum: totalPrice,
+    sessionId: session.id,
+  });
+};
+
+// same with createOrder before stripe
+const getCheckoutSuccess = async (req, res, next) => {
+  const user = req.user;
+
+  const populatedUser = await user.populate("cart.items.productId");
+
+  // console.log(populatedUser);
+
+  const userCart = populatedUser.cart.items.map((i) => {
+    return {
+      quantity: i.quantity,
+      product: { ...i.productId._doc },
+    };
+  });
+
+  const order = new Order({
+    user: {
+      email: req.user.email,
+      userId: user._id,
+    },
+    products: userCart,
+  });
+
+  await order.save();
+  await user.clearCart();
+
+  res.redirect("/orders");
+};
+
 const createOrder = async (req, res, next) => {
   const user = req.user;
 
@@ -228,7 +297,6 @@ const getInvoice = async (req, res, next) => {
 
   const invoiceName = `invoice-${orderId}.pdf`;
   const invoicePath = path.join("data", "invoices", invoiceName);
-  console.log(invoicePath);
 
   const pdfDoc = new PDFDocument();
 
@@ -264,7 +332,10 @@ module.exports = {
   getCart,
   addProductToCart,
   postCartDeleteProduct,
-  getOrders,
+  getCheckout,
+  getCheckoutSuccess,
   createOrder,
+  getOrders,
+  getHardcodedInvoiceExample,
   getInvoice,
 };

@@ -41,4 +41,7 @@ router.get("/edit-product/:productId", isAuth, adminController.getEditProduct);
 
 router.post("/delete-product", isAuth, adminController.deleteProductById);
 
+// client side javascript instead of the usual form post action etc.
+router.delete("/product/:productId", isAuth, adminController.deleteProductClientside);
+
 module.exports = router;

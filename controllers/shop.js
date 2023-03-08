@@ -19,12 +19,12 @@ const getIndex = async (req, res, next) => {
   // query name is page ?page=1
   const { page } = req.query;
 
-  const numberedPage = Number(page) || 1;
+  const currentPage = Number(page) || 1;
 
   const totalItems = await Product.find().countDocuments();
 
-  const hasNextPage = ITEMS_PER_PAGE * numberedPage < totalItems;
-  const hasPrevPage = numberedPage > 1;
+  const hasNextPage = ITEMS_PER_PAGE * currentPage < totalItems;
+  const hasPrevPage = currentPage > 1;
 
   try {
     const productList = await Product.find({})
@@ -36,9 +36,9 @@ const getIndex = async (req, res, next) => {
       path: "/",
       hasNextPage: hasNextPage,
       hasPrevPage: hasPrevPage,
-      currentPage: numberedPage,
-      nextPage: numberedPage + 1,
-      prevPage: numberedPage - 1,
+      currentPage: currentPage,
+      nextPage: currentPage + 1,
+      prevPage: currentPage - 1,
       lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
     });
   } catch (err) {

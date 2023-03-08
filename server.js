@@ -1,5 +1,10 @@
+require("dotenv").config();
 const path = require("path");
+const fs = require("fs");
 const express = require("express");
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
 
 const app = express();
 
@@ -11,8 +16,7 @@ const csrf = require("csurf");
 const flash = require("connect-flash");
 const multer = require("multer");
 
-const mongoUri =
-  "mongodb+srv://alvinacosta:lokalsoul@node-udemy-2022.j8p86sm.mongodb.net/shopDB?retryWrites=true&w=majority";
+const mongoUri = process.env.MONGO_URI;
 
 const store = new MongoDBStore({
   uri: mongoUri,
@@ -47,7 +51,7 @@ const fileFilterFunc = (req, file, cb) => {
 app.set("view engine", "ejs");
 app.set("views", "views");
 
-const port = 8080;
+const port = process.env.PORT || 8080;
 
 // Route imports
 const adminRoutes = require("./routes/admin");
@@ -72,6 +76,12 @@ app.use(
 );
 app.use(csrfProtection);
 app.use(flash());
+
+const accessLogStream = fs.createWriteStream(path.join(__dirname, "access.log"), { flags: "a" }); // flags append
+
+app.use(helmet());
+// app.use(compression());
+app.use(morgan("combined", { stream: accessLogStream }));
 
 app.use(express.static(path.join(__dirname, "public")));
 
